@@ -1,0 +1,5 @@
+add_library(shaderHelpers STATIC "Private/shader.c")
+target_include_directories(shaderHelpers PUBLIC "Public")
+find_package(glad CONFIG REQUIRED)
+#find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(shaderHelpers PUBLIC glad::glad) 

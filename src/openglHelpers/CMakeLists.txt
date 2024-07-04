@@ -1,0 +1,5 @@
+add_library(openglHelper STATIC "Private/openglHelper.c")
+target_include_directories(openglHelper PUBLIC "Public")
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glad CONFIG REQUIRED)
+target_link_libraries(openglHelper PUBLIC glad::glad glfw)
