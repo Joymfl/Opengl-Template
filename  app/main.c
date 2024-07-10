@@ -5,6 +5,9 @@
 #include "shader.h"
 #include "openglHelper.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+
+#include "stb_image.h"
 
 // Callback function to resize opengl viewport
 void framebuffer_size_callback(GLFWwindow *glfWwindow, int width, int height);
@@ -26,10 +29,40 @@ int main() {
     // Defining vertices and bind VBO object to gpu memory
     float vertices[] = {
             // Positions                      // colors
-            -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom left
-            .5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
-            0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f // top
+            0.5f, 0.5f, 0.0f,/* bottom left*/ 1.0f, 0.0f, 0.0f,/* texture */ 1.0f, 1.0f,
+            .5f, -0.5f, 0.0f,/* bottom right*/ 0.0f, 1.0f, 0.0f,/*texture*/ 1.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f,/* top*/ 0.0f, 0.0f, 1.0f,/*texture*/ 0.0f, 0.0f,
+            -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f
     };
+    unsigned int indices[] = {
+            1, 2, 3,
+            3, 0, 1
+    };
+
+    // generating and using EBO
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // define texture coordinates
+    float texCoords[] = {
+            0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f
+    };
+
+    // load texture
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("../../container.jpg", &width, &height, &nrChannels, 0);
+    if (!data) {
+        printf("Failed to load texture\n");
+        return -1;
+    }
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
 
     // Setup and Assign a VAO and VBO
     unsigned int VAO, VBO;
@@ -41,13 +74,16 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
 
     // color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // texture attrib
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
 
     // setup opengl viewport
@@ -68,13 +104,16 @@ int main() {
         // render triangle
 //        float timeValue = glfwGetTime();
 //        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-        int offsetLocation = glGetUniformLocation(shaderProgram, "offset");
+//        int offsetLocation = glGetUniformLocation(shaderProgram, "offset");
         glUseProgram(shaderProgram);
-        glUniform1f(offsetLocation, 0.5f);
+//        glUniform1f(offsetLocation, 0.5f);
 
         //draw first triangle
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+//        glDrawArrays(GL_TRIANGLES, 0, 4);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
