@@ -8,7 +8,13 @@
 #define INC_3DTESTER_SHADER_H
 
 
-int init_shaders(const char *vertexPath, const char *fragmentPath);
+struct ShaderInfo {
+    char *filename;
+    GLenum type;
+    GLuint shader;
+};
+
+GLuint init_shaders(struct ShaderInfo *shaders);
 
 void activateShader(int ID);
 
